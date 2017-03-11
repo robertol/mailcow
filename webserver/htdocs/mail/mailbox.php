@@ -1,7 +1,8 @@
 <?php
-require_once "inc/header.inc.php";
+require_once "inc/prerequisites.inc.php";
 
 if ($_SESSION['mailcow_cc_role'] == "admin" || $_SESSION['mailcow_cc_role'] == "domainadmin") {
+require_once "inc/header.inc.php";
 $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 ?>
 <div class="container">
@@ -49,10 +50,10 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 					<tbody>
 					<?php
 					try {
-						$stmt = $pdo->prepare("SELECT 
+						$stmt = $pdo->prepare("SELECT
 								`domain`,
 								`aliases`,
-								`mailboxes`, 
+								`mailboxes`,
 								`maxquota` * 1048576 AS `maxquota`,
 								`quota` * 1048576 AS `quota`,
 								CASE `backupmx` WHEN 1 THEN '".$lang['mailbox']['yes']."' ELSE '".$lang['mailbox']['no']."' END AS `backupmx`,
@@ -84,8 +85,8 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 									SELECT `username` FROM `mailbox`)");
 							$stmt->execute(array(':domain' => $row['domain']));
 							$AliasData = $stmt->fetch(PDO::FETCH_ASSOC);
-			
-							$stmt = $pdo->prepare("SELECT 
+
+							$stmt = $pdo->prepare("SELECT
 								COUNT(*) AS `count`,
 								COALESCE(SUM(`quota`), '0') AS `quota`
 									FROM `mailbox`
@@ -105,8 +106,8 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 							<td><?=htmlspecialchars($row['domain']);?></td>
 							<td><?=intval($AliasData['count']);?> / <?=intval($row['aliases']);?></td>
 							<td><?=$MailboxData['count'];?> / <?=$row['mailboxes'];?></td>
-							<td><?=formatBytes(intval($row['maxquota']), 2);?></td>
-							<td><?=formatBytes(intval($MailboxData['quota']), 2);?> / <?=formatBytes(intval($row['quota']));?></td>
+							<td data-value="<?=intval($row['maxquota']);?>"><?=formatBytes(intval($row['maxquota']), 2);?></td>
+							<td data-value="<?=intval($MailboxData['quota']);?>"><?=formatBytes(intval($MailboxData['quota']), 2);?> / <?=formatBytes(intval($row['quota']));?></td>
 							<?php
 							if ($_SESSION['mailcow_cc_role'] == "admin"):
 							?>
@@ -149,7 +150,7 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 					<tfoot>
 						<tr id="no-data">
 							<td colspan="8" style="text-align: center; font-style: normal; border-top: 1px solid #e7e7e7;">
-								<a href="/add.php?domain" class="btn btn-xs btn-primary"><span class="glyphicon glyphicon-plus"></span> <?=$lang['mailbox']['add_domain'];?></a>
+								<a href="/add.php?domain"><?=$lang['mailbox']['add_domain'];?></a>
 							</td>
 						</tr>
 					</tfoot>
@@ -189,14 +190,14 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 					<tbody>
 					<?php
 					try {
-						$stmt = $pdo->prepare("SELECT 
+						$stmt = $pdo->prepare("SELECT
 								`alias_domain`,
 								`target_domain`,
 								CASE `active` WHEN 1 THEN '".$lang['mailbox']['yes']."' ELSE '".$lang['mailbox']['no']."' END AS `active`
 									FROM `alias_domain`
 										WHERE `target_domain` IN (
 											SELECT `domain` FROM `domain_admins`
-												WHERE `username`= :username 
+												WHERE `username`= :username
 												AND `active`='1'
 										)
 										OR 'admin' = :admin");
@@ -237,7 +238,7 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 					<tfoot>
 						<tr id="no-data">
 							<td colspan="8" style="text-align: center; border-top: 1px solid #e7e7e7;">
-								<a href="/add.php?aliasdomain" class="btn btn-xs btn-primary"><span class="glyphicon glyphicon-plus"></span> <?=$lang['mailbox']['add_domain_alias'];?></a>
+								<a href="/add.php?aliasdomain"><?=$lang['mailbox']['add_domain_alias'];?></a>
 							</td>
 						</tr>
 					</tfoot>
@@ -270,6 +271,7 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 							<th class="sort-table" style="min-width: 86px;"><?=$lang['mailbox']['domain'];?></th>
 							<th class="sort-table" style="min-width: 75px;"><?=$lang['mailbox']['quota'];?></th>
 							<th class="sort-table" style="min-width: 99px;"><?=$lang['mailbox']['in_use'];?></th>
+							<th class="sort-table" style="min-width: 121px;"><?=$lang['mailbox']['temp_aliases'];?></th>
 							<th class="sort-table" style="min-width: 100px;"><?=$lang['mailbox']['msg_num'];?></th>
 							<th class="sort-table" style="min-width: 76px;"><?=$lang['mailbox']['active'];?></th>
 							<th style="text-align: right; min-width: 200px;" data-sortable="false"><?=$lang['mailbox']['action'];?></th>
@@ -311,6 +313,23 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 						}
 	          if(!empty($rows)):
 						while($row = array_shift($rows)):
+							try {
+								$stmt = $pdo->prepare("SELECT IFNULL(COUNT(`address`), 0) AS `spamalias`
+												FROM `spamalias`
+													WHERE `goto` = :username
+														AND `validity` >= :unixnow");
+								$stmt->execute(array(
+									':username' => $row['username'],
+									':unixnow' => time()
+								));
+								$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+							} catch (PDOException $e) {
+								$_SESSION['return'] = array(
+									'type' => 'danger',
+									'msg' => 'MySQL: '.$e
+								);
+								return false;
+							}
 						?>
 						<tr id="data">
 							<?php
@@ -326,8 +345,8 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 							?>
 							<td><?=htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8');?></td>
 							<td><?=htmlspecialchars($row['domain']);?></td>
-							<td><?=formatBytes(intval($row['bytes']), 2);?> / <?=formatBytes(intval($row['quota']), 2);?></td>
-							<td style="min-width:120px;">
+							<td data-value="<?=intval($row['bytes']);?>"><?=formatBytes(intval($row['bytes']), 2);?> / <?=formatBytes(intval($row['quota']), 2);?></td>
+							<td data-value="<?=intval($row['bytes']);?>" style="min-width:120px;">
 								<?php
 								$percentInUse = round((intval($row['bytes']) / intval($row['quota'])) * 100);
 								if ($percentInUse >= 90) {
@@ -346,6 +365,7 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 									</div>
 								</div>
 							</td>
+							<td><?=$data[0]['spamalias'];?></td>
 							<td><?=$row['messages'];?></td>
 							<td><?=$row['active'];?></td>
 							<td style="text-align: right;">
@@ -366,8 +386,8 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 					</tbody>
 					<tfoot>
 						<tr id="no-data">
-							<td colspan="8" style="text-align: center; border-top: 1px solid #e7e7e7;">
-								<a href="/add.php?mailbox" class="btn btn-xs btn-primary"><span class="glyphicon glyphicon-plus"></span> <?=$lang['mailbox']['add_mailbox'];?></a>
+							<td colspan="9" style="text-align: center; border-top: 1px solid #e7e7e7;">
+								<a href="/add.php?mailbox"><?=$lang['mailbox']['add_mailbox'];?></a>
 							</td>
 						</tr>
 					</tfoot>
@@ -418,7 +438,7 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 											AND `address` != `goto`
 										) AND (`domain` IN (
 											SELECT `domain` FROM `domain_admins`
-												WHERE `username` = :username 
+												WHERE `username` = :username
 												AND active='1'
 											)
 											OR 'admin' = :admin)");
@@ -472,13 +492,13 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 					?>
 					  <tr id="no-data"><td colspan="5" style="text-align: center; font-style: italic;"><?=$lang['mailbox']['no_record'];?></td></tr>
 					<?php
-					endif;	
+					endif;
 					?>
 					</tbody>
 					<tfoot>
 						<tr id="no-data">
 							<td colspan="8" style="text-align: center; border-top: 1px solid #e7e7e7;">
-								<a href="/add.php?alias" class="btn btn-xs btn-primary"><span class="glyphicon glyphicon-plus"></span> <?=$lang['mailbox']['add_alias'];?></a>
+								<a href="/add.php?alias"><?=$lang['mailbox']['add_alias'];?></a>
 							</td>
 						</tr>
 					</tfoot>
@@ -491,9 +511,9 @@ $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 <script src="js/sorttable.js"></script>
 <script src="js/mailbox.js"></script>
 <?php
-}
-else {
-	header('Location: /');
-}
 require_once("inc/footer.inc.php");
+} else {
+	header('Location: /');
+	exit();
+}
 ?>

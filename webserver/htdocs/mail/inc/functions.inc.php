@@ -190,7 +190,7 @@ function set_mailcow_config($s, $v = '') {
 			if (!ctype_alnum($v)) {
 				$_SESSION['return'] = array(
 					'type' => 'danger',
-					'msg' => 'Invalid max. message size'
+					'msg' => $lang['admin']['invalid_max_msg_size']
 				);
 				break;
 			}
@@ -205,13 +205,8 @@ function set_mailcow_config($s, $v = '') {
 			}
 			break;
 		case "anonymize":
-			$template = '/^\s*(Received: from)[^\n]*(.*)/ REPLACE $1 [127.0.0.1] (localhost [127.0.0.1])$2
-/^\s*User-Agent/        IGNORE
-/^\s*X-Enigmail/        IGNORE
-/^\s*X-Mailer/          IGNORE
-/^\s*X-Originating-IP/  IGNORE
-		';
 			if ($v == "on") {
+ 				$template = file_get_contents($GLOBALS["MC_ANON_HEADERS"].".template");
 				file_put_contents($GLOBALS["MC_ANON_HEADERS"], $template);
 			} else {
 				file_put_contents($GLOBALS["MC_ANON_HEADERS"], "");
@@ -221,7 +216,7 @@ function set_mailcow_config($s, $v = '') {
 			if (!ctype_alnum(str_replace("/", "", $v['public_folder_name']))) {
 				$_SESSION['return'] = array(
 					'type' => 'danger',
-					'msg' => 'Public folder name must not be empty'
+					'msg' => $lang['admin']['public_folder_empty']
 				);
 				break;
 			}
@@ -363,6 +358,14 @@ function opendkim_table($action, $which = "") {
 }
 function sys_info($what) {
 	switch ($what) {
+		case "uptime":
+			$ut = strtok(exec("cat /proc/uptime"), ".");
+			$uptime['days'] = sprintf("%2d", ($ut/(3600*24)));
+			$uptime['hours'] = sprintf("%2d", (($ut%(3600*24))/3600));
+			$uptime['minutes'] = sprintf("%2d", ($ut%(3600*24)%3600)/60);
+			$uptime['seconds'] = sprintf("%2d", ($ut%(3600*24)%3600)%60);
+			return $uptime;
+			break;
 		case "ram":
 			$return['total']		= filter_var(shell_exec("free -b | grep Mem | awk '{print $2}'"), FILTER_SANITIZE_NUMBER_FLOAT);
 			$return['used']			= filter_var(shell_exec("free -b | grep Mem | awk '{print $3}'"), FILTER_SANITIZE_NUMBER_FLOAT);
@@ -376,6 +379,12 @@ function sys_info($what) {
 			$du = $dt - $df;
 			return sprintf('%.2f',($du / $dt) * 100);
 			break;
+    		case "cpu":
+		      	$exec_loads = sys_getloadavg();
+		      	$exec_cores = trim(shell_exec("grep -P '^processor' /proc/cpuinfo|wc -l"));
+		      	$cpu = round($exec_loads[1]/($exec_cores + 1)*100, 0);
+		      	return $cpu;
+		      	break;
 		case "pflog":
 			$pflog_content = file_get_contents($GLOBALS['PFLOG']);
 			if (!file_exists($GLOBALS['PFLOG'])) {

@@ -1,7 +1,9 @@
 <?php
-require_once("inc/header.inc.php");
-$_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
+require_once("inc/prerequisites.inc.php");
+
 if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'user') {
+	require_once("inc/header.inc.php");
+	$_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
 	$username = $_SESSION['mailcow_cc_username'];
 	$get_tls_policy = get_tls_policy($_SESSION['mailcow_cc_username']);
 ?>
@@ -48,7 +50,7 @@ if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'user
 	</div>
 	<div class="form-group">
 		<div class="col-sm-offset-3 col-sm-9">
-			<button type="submit" name="trigger_set_user_account" class="btn btn-success btn-default"><?=$lang['user']['save_changes'];?></button>
+			<button type="submit" name="trigger_set_user_account" class="btn btn-success"><?=$lang['user']['save_changes'];?></button>
 		</div>
 	</div>
 </form>
@@ -255,7 +257,7 @@ if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'user
 					<form class="form-inline" method="post">
 					<div class="col-sm-6"><?=htmlspecialchars($blacklistRow['value']);?></div>
 					<div class="col-sm-6">
-						<input type="hidden" name="wlid" value="<?=$blacklistRow['prefid'];?>">
+						<input type="hidden" name="blid" value="<?=$blacklistRow['prefid'];?>">
 						<button type="submit" id="trigger_delete_blacklist" name="trigger_delete_blacklist" style="margin-bottom:1px;" class="btn btn-xs btn-danger"><?=$lang['user']['spamfilter_table_remove'];?></button>
 					</div>
 					</form>
@@ -303,7 +305,7 @@ if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'user
 		</div>
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
-				<button type="submit" id="trigger_set_tls_policy" name="trigger_set_tls_policy" class="btn btn-default"><?=$lang['user']['save_changes'];?></button>
+				<button type="submit" id="trigger_set_tls_policy" name="trigger_set_tls_policy" class="btn btn-success"><?=$lang['user']['save_changes'];?></button>
 			</div>
 		</div>
 	</form>
@@ -316,9 +318,9 @@ if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'user
 <script src="js/sorttable.js"></script>
 <script src="js/user.js"></script>
 <?php
-}
-else {
-	header('Location: /');
-}
 require_once("inc/footer.inc.php");
+} else {
+	header('Location: /');
+	exit();
+}
 ?>

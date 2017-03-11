@@ -253,7 +253,7 @@ php-net-socket php-net-url php-pear php-soap ${PHP} ${PHP}-cli ${PHP}-common ${P
 ${PHP}-intl ${PHP}-xsl ${PHP}-mcrypt ${PHP}-mysql libawl-php ${PHP}-xmlrpc ${DATABASE_BACKEND} ${WEBSERVER_BACKEND} mailutils pyzor razor \
 postfix postfix-mysql postfix-pcre postgrey pflogsumm spamassassin spamc sa-compile libdbd-mysql-perl opendkim opendkim-tools clamav-daemon \
 python-magic liblockfile-simple-perl libdbi-perl libmime-base64-urlsafe-perl libtest-tempdir-perl liblogger-syslog-perl \
-${OPENJDK}-jre-headless libcurl4-openssl-dev libexpat1-dev solr-jetty > /dev/null
+${OPENJDK}-jre-headless libcurl4-openssl-dev libexpat1-dev solr-jetty python-sqlalchemy python-beautifulsoup python-mysqldb > /dev/null
 			if [ "$?" -ne "0" ]; then
 				echo "$(redb [ERR]) - Package installation failed:"
 				tail -n 20 /var/log/dpkg.log
@@ -288,7 +288,7 @@ DEBIAN_FRONTEND=noninteractive ${APT} -y install dovecot-common dovecot-core dov
 			update-ca-certificates
 			;;
 		ssl_le)
-			curled_ip="$(curl -4s ifconfig.co)"
+			curled_ip="$(curl -4s https://api.ipify.org?format=text)"
 			for ip in $(dig ${sys_hostname}.${sys_domain} a +short)
 			do
 				if [[ "${ip}" == "${curled_ip}" ]]; then
@@ -332,6 +332,8 @@ DEBIAN_FRONTEND=noninteractive ${APT} -y install dovecot-common dovecot-core dov
 					ln -s /etc/ssl/mail/certs/${sys_hostname}.${sys_domain}/privkey.pem /etc/ssl/mail/mail.key
 				fi
 				service ${httpd_platform} restart
+				service dovecot restart
+				service postfix restart
 			fi
 			;;
 		mysql)
@@ -380,6 +382,7 @@ DEBIAN_FRONTEND=noninteractive ${APT} -y install dovecot-common dovecot-core dov
 			install -m 644 postfix/conf/master.cf /etc/postfix/master.cf
 			install -m 644 postfix/conf/main.cf /etc/postfix/main.cf
 			install -o www-data -g www-data -m 644 postfix/conf/mailcow_anonymize_headers.pcre /etc/postfix/mailcow_anonymize_headers.pcre
+			install -o www-data -g www-data -m 644 postfix/conf/mailcow_anonymize_headers.pcre /etc/postfix/mailcow_anonymize_headers.pcre.template
 			install -m 644 postfix/conf/postscreen_access.cidr /etc/postfix/postscreen_access.cidr
 			install -m 644 postfix/conf/smtp_dsn_filter.pcre /etc/postfix/smtp_dsn_filter.pcre
 			sed -i "s/sys_hostname.sys_domain/${sys_hostname}.${sys_domain}/g" /etc/postfix/main.cf
@@ -409,6 +412,10 @@ DEBIAN_FRONTEND=noninteractive ${APT} -y install dovecot-common dovecot-core dov
 			tar xf fuglu/inst/${fuglu_version}.tar -C fuglu/inst/ 2> /dev/null
 			(cd fuglu/inst/${fuglu_version} ; python setup.py -q install)
 			cp -R fuglu/conf/* /etc/fuglu/
+			sed -i "s/my_mailcowpass/${my_mailcowpass}/g" /etc/fuglu/fuglu.conf
+			sed -i "s/my_mailcowuser/${my_mailcowuser}/g" /etc/fuglu/fuglu.conf
+			sed -i "s/my_mailcowdb/${my_mailcowdb}/g" /etc/fuglu/fuglu.conf
+			sed -i "s/my_dbhost/${my_dbhost}/g" /etc/fuglu/fuglu.conf
 			if [[ -f /lib/systemd/systemd ]]; then
 				cp fuglu/inst/${fuglu_version}/scripts/startscripts/debian/8/fuglu.service /etc/systemd/system/fuglu.service
 				systemctl disable fuglu
@@ -701,6 +708,7 @@ DEBIAN_FRONTEND=noninteractive ${APT} -y install dovecot-common dovecot-core dov
 			defaults write sogod SOGoTrashFolderName Trash;
 			defaults write sogod SOGoIMAPServer 'imap://127.0.0.1:143/';
 			defaults write sogod SOGoSMTPServer 127.0.0.1:588;
+			defaults write sogod SOGoSieveFolderEncoding 'UTF-8';
 			defaults write sogod SOGoMailingMechanism smtp;
 			defaults write sogod SOGoMailCustomFromEnabled YES;
 			defaults write sogod SOGoPasswordChangeEnabled NO;
@@ -710,12 +718,11 @@ DEBIAN_FRONTEND=noninteractive ${APT} -y install dovecot-common dovecot-core dov
 			defaults write sogod SOGoLanguage English;
 			defaults write sogod SOGoMemcachedHost '127.0.0.1';
 			defaults write sogod WOListenQueueSize 300;
-			defaults write sogod WOPidFile = '/var/run/sogo.pid';
+			defaults write sogod WOPidFile '/var/run/sogo.pid';
 			defaults write sogod WOWatchDogRequestTimeout 10;
+			defaults write sogod NGImap4ConnectionStringSeparator '/';
 			defaults write sogod SOGoMaximumPingInterval 354;
 			defaults write sogod SOGoMaximumSyncInterval 354;
-			defaults write sogod SOGoMaximumSyncResponseSize 1024;
-			defaults write sogod SOGoMaximumSyncWindowSize 15480;
 			defaults write sogod SOGoInternalSyncInterval 30;"
 			# ~1 for 10 users, more when AS is enabled - 384M is the absolute max. it may reach
 			# Set static worker count as workaround

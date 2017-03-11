@@ -1,54 +1,10 @@
-<?php
-ini_set("session.cookie_secure", 1);
-ini_set("session.cookie_httponly", 1);
-session_start();
-if (isset($_POST["logout"])) {
-	session_unset();
-	session_destroy();
-	session_write_close();
-	setcookie(session_name(),'',0,'/');
-}
-
-require_once 'inc/vars.inc.php';
-include_once 'inc/vars.local.inc.php';
-
-$dsn = "$database_type:host=$database_host;dbname=$database_name";
-$opt = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
-$pdo = new PDO($dsn, $database_user, $database_pass, $opt);
-
-if (isset($_POST['lang'])) {
-	switch ($_POST['lang']) {
-		case "de":
-			$_SESSION['mailcow_locale'] = 'de';
-		break;
-		case "en":
-			$_SESSION['mailcow_locale'] = 'en';
-		break;
-		case "pt":
-			$_SESSION['mailcow_locale'] = 'pt';
-		break;
-	}
-}
-if (!isset($_SESSION['mailcow_locale'])) {
-	$_SESSION['mailcow_locale'] = strtolower(trim($DEFAULT_LANG));
-}
-require_once 'lang/lang.en.php';
-include 'lang/lang.'.$_SESSION['mailcow_locale'].'.php';
-require_once 'inc/functions.inc.php';
-require_once 'inc/triggers.inc.php';
-
-?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= $_SESSION['mailcow_locale'] ?>">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?php echo gethostname() ?></title>
+<title>mailcow UI - <?php echo gethostname() ?></title>
 <!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -61,8 +17,8 @@ require_once 'inc/triggers.inc.php';
 <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.2/css/bootstrap3/bootstrap-switch.min.css">
 <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700&subset=latin,latin-ext">
 <link rel="stylesheet" href="/inc/languages.min.css">
-<link rel="shortcut icon" href="/favicon.png" type="image/png">
-<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="shortcut icon" href="/img/mailcow-icon.png" type="image/png">
+<link rel="icon" href="/img/mailcow-icon.png" type="image/png">
 <style>
 #maxmsgsize { min-width: 80px; }
 ul[id*="sortable"] { word-wrap: break-word; list-style-type: none; float: left; padding: 0 15px 0 0; width: 48%; cursor:move}
@@ -182,7 +138,8 @@ if (preg_match("/mailbox.php/i", $_SERVER['REQUEST_URI'])):
 endif;
 ?>
 </head>
-<body style="padding-top:70px">
+<body style="padding-top: <?php if(basename($_SERVER["SCRIPT_FILENAME"]) === "index.php"){echo "20px";}else{echo "70px";} ?>">
+<?php if(basename($_SERVER["SCRIPT_FILENAME"]) !== "index.php"): ?>
 <nav class="navbar navbar-default navbar-fixed-top"  role="navigation">
 	<div class="container-fluid">
 		<div class="navbar-header">
@@ -192,7 +149,7 @@ endif;
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="/"><img alt="mailcow-logo" style="margin-top:-5px;" src="/img/xs_mailcow.png" /></a>
+			<a class="navbar-brand" href="/"><img alt="mailcow-logo" style="max-width: 54px; margin-top:-14px;" src="/img/mailcow-icon.svg" /></a>
 		</div>
 		<div id="navbar" class="navbar-collapse collapse">
 			<ul class="nav navbar-nav navbar-right">
@@ -202,9 +159,11 @@ endif;
 				<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="lang-sm lang-lbl" lang="<?=$_SESSION['mailcow_locale'];?>"></span><span class="caret"></span></a>
 					<ul class="dropdown-menu" role="menu">
-						<li <?=($_SESSION['mailcow_locale'] == 'de') ? 'class="active"' : ''?>> <a href="#" onClick="setLang('de')"><span class="lang-xs lang-lbl-full" lang="de"></span></a></li>
-						<li <?=($_SESSION['mailcow_locale'] == 'en') ? 'class="active"' : ''?>> <a href="#" onClick="setLang('en')"><span class="lang-xs lang-lbl-full" lang="en"></span></a></li>
-						<li <?=($_SESSION['mailcow_locale'] == 'pt') ? 'class="active"' : ''?>> <a href="#" onClick="setLang('pt')"><span class="lang-xs lang-lbl-full" lang="pt"></span></a></li>
+						<li <?=($_SESSION['mailcow_locale'] == 'de') ? 'class="active"' : ''?>> <a href="?<?= http_build_query(array_merge($_GET, array("lang" => "de"))) ?>"><span class="lang-xs lang-lbl-full" lang="de"></span></a></li>
+						<li <?=($_SESSION['mailcow_locale'] == 'en') ? 'class="active"' : ''?>> <a href="?<?= http_build_query(array_merge($_GET, array("lang" => "en"))) ?>"><span class="lang-xs lang-lbl-full" lang="en"></span></a></li>
+						<li <?=($_SESSION['mailcow_locale'] == 'fr') ? 'class="active"' : ''?>> <a href="?<?= http_build_query(array_merge($_GET, array("lang" => "fr"))) ?>"><span class="lang-xs lang-lbl-full" lang="fr"></span></a></li>
+						<li <?=($_SESSION['mailcow_locale'] == 'nl') ? 'class="active"' : ''?>> <a href="?<?= http_build_query(array_merge($_GET, array("lang" => "nl"))) ?>"><span class="lang-xs lang-lbl-full" lang="nl"></span></a></li>
+						<li <?=($_SESSION['mailcow_locale'] == 'pt') ? 'class="active"' : ''?>> <a href="?<?= http_build_query(array_merge($_GET, array("lang" => "pt"))) ?>"><span class="lang-xs lang-lbl-full" lang="pt"></span></a></li>
 					</ul>
 				</li>
 				<?php
@@ -247,4 +206,5 @@ endif;
 		</div><!--/.nav-collapse -->
 	</div><!--/.container-fluid -->
 </nav>
+<?php endif; ?>
 <form action="/" method="post" id="logout"><input type="hidden" name="logout"></form>

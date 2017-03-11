@@ -1,5 +1,6 @@
-/^Received: from \[.*?\] \([\w-.]* \[.*?\]\)\s+\(Authenticated sender: (.*)\)\s+by (.*) \(Postfix\) with (E?SMTPS?A?) id ([A-F\d]+)(.*)/
-        REPLACE Received: from [127.0.0.1] (localhost [127.0.0.1]) (Authenticated sender: $1) by ($2) with $3 id $4$5
+/^\s*Received:[^\)]+\)\s+\(Authenticated sender:(.+)/
+	REPLACE Received: from localhost (localhost [127.0.0.1]) (Authenticated sender:$1
+
 /^\s*User-Agent/        IGNORE
 /^\s*X-Enigmail/        IGNORE
 /^\s*X-Mailer/          IGNORE

@@ -1,9 +1,9 @@
 <?php
+require_once("inc/prerequisites.inc.php");
+
+if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == "admin") {
 require_once("inc/header.inc.php");
 $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
-?>
-<?php
-if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'admin') {
 ?>
 <div class="container">
 <h4><span class="glyphicon glyphicon-user" aria-hidden="true"></span> <?=$lang['admin']['access'];?></h4>
@@ -51,7 +51,7 @@ if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'admi
 					</div>
 					<div class="form-group">
 						<div class="col-sm-offset-2 col-sm-10">
-							<button type="submit" name="trigger_set_admin" class="btn btn-default"><?=$lang['admin']['save'];?></button>
+							<button type="submit" name="trigger_set_admin" class="btn btn-success"><?=$lang['admin']['save'];?></button>
 						</div>
 					</div>
 				</form>
@@ -193,7 +193,7 @@ if (isset($_SESSION['mailcow_cc_role']) && $_SESSION['mailcow_cc_role'] == 'admi
 					</div>
 					<div class="form-group">
 						<div class="col-sm-offset-2 col-sm-10">
-							<button type="submit" name="trigger_add_domain_admin" class="btn btn-default"><?=$lang['admin']['add'];?></button>
+							<button type="submit" name="trigger_add_domain_admin" class="btn btn-success"><?=$lang['admin']['add'];?></button>
 						</div>
 					</div>
 				</form>
@@ -251,7 +251,7 @@ foreach($srr_values_inactive as $srr_value) {
 		</div>
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
-				<button type="submit" name="srr" class="btn btn-default"><?=$lang['admin']['save'];?></button>
+				<button type="submit" name="srr" class="btn btn-success"><?=$lang['admin']['save'];?></button>
 				<button type="submit" name="reset-srr" class="btn btn-primary"><?=$lang['admin']['reset_defaults'];?></button>
 			</div>
 		</div>
@@ -295,7 +295,7 @@ foreach($ssr_values_inactive as $ssr_value) {
 		</div>
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
-				<button type="submit" name="ssr" class="btn btn-default"><?=$lang['admin']['save'];?></button>
+				<button type="submit" name="ssr" class="btn btn-success"><?=$lang['admin']['save'];?></button>
 				<button type="submit" name="reset-ssr" class="btn btn-primary"><?=$lang['admin']['reset_defaults'];?></button>
 			</div>
 		</div>
@@ -338,7 +338,7 @@ foreach($ssr_values_inactive as $ssr_value) {
 	<div class="form-group">
 	<input type="hidden" name="trigger_public_folder">
 		<div class="col-sm-8">
-			<button type="submit" class="btn btn-default"><?=$lang['admin']['save'];?></button>
+			<button type="submit" class="btn btn-success"><?=$lang['admin']['save'];?></button>
 		</div>
 	</div>
 </form>
@@ -363,7 +363,7 @@ foreach($ssr_values_inactive as $ssr_value) {
 	</div>
 	<div class="form-group">
 		<div class="col-sm-8">
-			<button type="submit" name="trigger_anonymize" class="btn btn-default"><?=$lang['admin']['save'];?></button>
+			<button type="submit" name="trigger_anonymize" class="btn btn-success"><?=$lang['admin']['save'];?></button>
 		</div>
 	</div>
 </form>
@@ -421,7 +421,7 @@ foreach($ssr_values_inactive as $ssr_value) {
 				<option>2048</option>
 			</select>
 		</div>
-		<button type="submit" name="add_dkim_record" class="btn btn-default"><span class="glyphicon glyphicon-plus"></span> <?=$lang['admin']['add'];?></button>
+		<button type="submit" name="add_dkim_record" class="btn btn-success"><span class="glyphicon glyphicon-plus"></span> <?=$lang['admin']['add'];?></button>
 	</form>
 </div>
 </div>
@@ -439,7 +439,7 @@ foreach($ssr_values_inactive as $ssr_value) {
 	<div class="form-group">
 		<input type="number" class="form-control" id="maxmsgsize" name="maxmsgsize" placeholder="in MB" min="1" max="250" required>
 	</div>
-	<button type="submit" class="btn btn-default"><?=$lang['admin']['save'];?></button>
+	<button type="submit" class="btn btn-success"><?=$lang['admin']['save'];?></button>
 </form>
 </div>
 </div>
@@ -455,6 +455,24 @@ foreach($ssr_values_inactive as $ssr_value) {
 	</div>
 	<div id="collapseSysinfo" class="panel-collapse collapse">
 	<div class="panel-body">
+		<legend><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span> About Server</legend>
+		<div class="row">
+			<div class="col-md-6">
+				<blockquote>
+					<strong>Uptime:</strong> <?=sys_info('uptime')['days'].' <i>day(s)</i>, '.sys_info('uptime')['hours'].' <i>hour(s)</i>, '.sys_info('uptime')['minutes'].' <i>minute(s)</i> '?>
+				</blockquote>
+			</div>
+			<div class="col-md-6">
+				<blockquote>
+					<strong>Hostname:</strong> <?=gethostname()?>
+				</blockquote>
+			</div>
+			<div class="col-md-6">
+				<blockquote>
+					<strong>mailcow version:</strong> <?=file_get_contents("/etc/mailcow_version")?>
+				</blockquote>
+			</div>
+		</div>
 		<div class="row">
 			<div class="col-md-6">
 				<legend><span class="glyphicon glyphicon-hdd" data-toggle="tooltip" title="/var/vmail" aria-hidden="true"></span> Disk <?=formatBytes(disk_total_space('/var/vmail')-disk_free_space("/var/vmail"));?> / <?=formatBytes(disk_total_space('/var/vmail'))?></legend>
@@ -473,6 +491,12 @@ foreach($ssr_values_inactive as $ssr_value) {
 				</div>
 			</div>
 		</div>
+ 	  	<legend><span class="glyphicon glyphicon-stats" aria-hidden="true"></span> CPU <?=sys_info('cpu');?>%</legend>
+				<div class="progress">
+				  <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="<?php echo sys_info('cpu');?>"
+				  aria-valuemin="0" aria-valuemax="100" style="width:<?=sys_info('cpu');?>%">
+				  </div>
+				</div>
 		<legend>Postqueue</legend>
 			<pre><?php echo sys_info("mailq");?></pre>
 		<legend>Pflogsumm <code>/var/log/mail.log</code></legend>
@@ -490,17 +514,14 @@ foreach($ssr_values_inactive as $ssr_value) {
 	</div>
 </div>
 </div>
-<?php
-}
-else {
-	header('Location: /');
-	die("Permission denied");
-}
-?>
 </div> <!-- /container -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js" integrity="sha384-YWP9O4NjmcGo4oEJFXvvYSEzuHIvey+LbXkBNJ1Kd0yfugEZN9NCQNpRYBVC1RvA" crossorigin="anonymous"></script>
 <script src="js/sorttable.js"></script>
 <script src="js/admin.js"></script>
 <?php
 require_once("inc/footer.inc.php");
+} else {
+	header('Location: /');
+	exit();
+}
 ?>

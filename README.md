@@ -4,6 +4,7 @@
 
 - [mailcow](#mailcow)
 - [Introduction](#introduction)
+- [System Requirements](#system-requirements)
 - [Before You Begin (Prerequisites)](#before-you-begin-prerequisites)
 - [Installation](#installation)
 - [Upgrade](#upgrade)
@@ -16,7 +17,7 @@ mailcow
 
 mailcow is a mail server suite based on Dovecot, Postfix and other open source software, that provides a modern web UI for user/server administration.
 
-mailcow supports **Debian 8 Jessie, Ubuntu LTS 14.04 Trusty and Ubuntu LTS 16.04 Xenial**
+mailcow supports **Debian 8 (Jessie), Ubuntu LTS 14.04 (Trusty Tahr) and Ubuntu LTS 16.04 (Xenial Xerus)**
 
 [Everybody loves screenshots (v0.14)](http://imgur.com/a/lWX2V)
 
@@ -36,7 +37,7 @@ mailcow supports **Debian 8 Jessie, Ubuntu LTS 14.04 Trusty and Ubuntu LTS 16.04
 * Incoming and outgoing spam and virus protection with FuGlu as pre-queue content filter; [Heinlein Support](https://www.heinlein-support.de/) spamassassin rules included; Advanced ClamAV malware filters
 * Sieve/ManageSieve (default filter: move spam to "Junk" folder, move tagged mail to folder "tag")
 * Public folder support via control center
-* per-user ACL
+* Per-user ACL
 * Shared Namespace
 * Quotas
 * Auto-configuration for ActiveSync + Thunderbird (and its derivates)
@@ -50,14 +51,24 @@ or
 * SOGo
     * Full groupware with ActiveSync and Card-/CalDAV support
 
+# System Requirements
+Please check, if your system meets the following system resources:
+
+| Resource                | mailcow (Roundcube) | mailcow (SOGo) |
+| ----------------------- | ------------------- | -------------- |
+| CPU                     | 1 GHz               | 1 GHz          |
+| RAM                     | 800 MiB             | 1 GiB          |
+| Disk                    | 5 GiB               | 5 GiB          |
+| System Type             | x86 or x86_64       | x86_64         |
+
 # Before You Begin: Prerequisites
-- **Please remove any web- and mail services** running on your server. I recommend using a clean Debian minimal installation.
-Remember to purge Debians default MTA Exim4:
+- **Please remove any web and mail services** running on your server. I recommend using a clean Debian minimal installation.
+Remember to purge Debian's default MTA Exim4:
 ```
 apt-get purge exim4*
 ``` 
 
-- If there is any firewall, unblock the following ports for incoming connections:
+- If there is a firewall, unblock the following ports for incoming connections:
 
 | Service               | Protocol | Port   |
 | -------------------   |:--------:|:-------|
@@ -66,6 +77,8 @@ apt-get purge exim4*
 | Postfix SMTP          | TCP      | 25     |
 | Dovecot IMAP          | TCP      | 143    |
 | Dovecot IMAPS         | TCP      | 993    |
+| Dovecot POP3          | TCP      | 110    |
+| Dovecot POP3S         | TCP      | 995    |
 | Dovecot ManageSieve   | TCP      | 4190   |
 | HTTP(S)               | TCP      | 80/443 |
 
@@ -89,19 +102,14 @@ You do not need to setup `autodiscover` when not using SOGo with ActiveSync.
 
 **Hint:** ActiveSync auto-discovery is setup to configure desktop clients with IMAP!
 
-The following records are optional but recommended:
+Further DNS records for SPF and DKIM are recommended. These entries will raise trust in your mailserver, reduce abuse of your domain name and increase authenticity.
 
-Please setup a SPF TXT record according to docs you will find on the internet.
-SPF is broken by design and a huge headache when it comes to forwarding.
-Try to not push yourself with a `-all` record but prefer `?all`. Also known as "I use SPF but I do not actually care". :-)
-
-After finishing the installation, head to the mailcow web UI, log in as admin and create DKIM TXT records for your domains.
-You will find them ready to copy and paste to your DNS servers configuration.
+Find more details about mailcow DNS entries and SPF/DKIM related configuration in our wiki article on [DNS Records](https://github.com/andryyy/mailcow/wiki/DNS-records).
 
 - Next it is important that you **do not use Google DNS** or another public DNS which is known to be blocked by DNS-based Blackhole List (DNSBL) providers.
 
-I recommend PowerDNS Recursor as a local recursor with DNSSEC capabilities. See https://repo.powerdns.com/
-Though any non-blocked or ratelimited DNS server your ISP gave you *should* be fine.
+I recommend PowerDNS Recursor as a local recursor with DNSSEC capabilities. See https://repo.powerdns.com/.
+Though any non-blocked or rate limited DNS server your ISP gave you *should* be fine.
 
 # Installation
 **Please run all commands as root**
@@ -153,13 +161,13 @@ More debugging is about to come. Though everything should work as intended.
 
 After the installation, visit your dashboard @ **https://hostname.example.com**, use the logged credentials in `./installer.log`
 
-Remember to create an alias- or a mailbox for `postmaster`.
+Remember to create an alias or a mailbox for `postmaster`.
 
 Again, please check you setup all DNS records accordingly.
 
 ## Web UI configuration variables
 
-Some settings can be changed be overwriting defaults of `/var/www/mail/inc/vars.inc.php` in `/var/www/mail/inc/vars.local.inc.php`.
+Some settings can be changed by overwriting defaults of `/var/www/mail/inc/vars.inc.php` in `/var/www/mail/inc/vars.local.inc.php`.
 
 Changes to `/var/www/mail/inc/vars.local.inc.php` will not be overwritten when upgrading mailcow.
 
@@ -247,5 +255,6 @@ systemctl disable fuglu
 rm -rf /usr/local/lib/python2.7/dist-packages/fuglu*
 update-rc.d -f fuglu remove
 userdel fuglu
+# FuGlu dependencies
+python-sqlalchemy python-beautifulsoup python-mysqldb
 ```
-
